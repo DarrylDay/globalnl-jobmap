@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Global NL Database - Add Location</title>
+
+<link rel="stylesheet" type="text/css" href="assets/datatables.min.css"/>
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="options.html">Global NL Database</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li><a href="options.html">Console</a></li>
+      <li class="active"><a href="addlocation.html">Add New Location</a></li>
+      <li><a href="addstudent.html">Add New Student</a></li>
+      <li><a href="addjob.html">Add New Job</a></li>
+      <li><a href="jobmap.html">View Job Map</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li id="login_name"><a href="#"><span class="glyphicon glyphicon-user"></span> User</a></li>
+      <li><a onclick="logout()" href="javascript:void(0);"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container well form-horizontal">
+<fieldset>
+
+<!-- Form Name -->
+<legend>Add New Location to Database</legend>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-sm-4 col-sm-offset-1 control-label">Company</label>
+  <div class="col-sm-4 inputGroupContainer">
+  <div class="input-group">
+  <input  name="" placeholder="" class="form-control"  type="text" id="company">
+    </div>
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-sm-4 col-sm-offset-1 control-label">Country</label>
+    <div class="col-sm-4 inputGroupContainer">
+    <div class="input-group">
+  <input name="" placeholder="" class="form-control"  type="text" id="country">
+    </div>
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-sm-4 col-sm-offset-1 control-label">State/Province</label>
+    <div class="col-sm-4 inputGroupContainer">
+    <div class="input-group">
+  <input name="" placeholder="" class="form-control"  type="text" id="state">
+    </div>
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-sm-4 col-sm-offset-1 control-label">City</label>
+    <div class="col-sm-4 inputGroupContainer">
+    <div class="input-group">
+  <input name="" placeholder="" class="form-control" type="text" id="city">
+    </div>
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-sm-4 col-sm-offset-1 control-label">Latitude (North)</label>
+    <div class="col-sm-4 inputGroupContainer">
+    <div class="input-group">
+  <input name="" placeholder="" class="form-control" type="text" id="lat">
+    </div>
+  </div>
+</div>
+
+<!-- Text input-->
+<div class="form-group">
+  <label class="col-sm-4 col-sm-offset-1 control-label">Longitude (East)</label>
+    <div class="col-sm-4 inputGroupContainer">
+    <div class="input-group">
+  <input name="" placeholder="" class="form-control"  type="text" id="lng">
+    </div>
+  </div>
+</div>
+
+<!-- Button -->
+<div class="form-group">
+  <label class="col-sm-4 col-sm-offset-1 control-label"></label>
+  <div class="col-sm-4">
+    <button type="submit" class="btn btn-success" onclick="addLocation();">Add Location<span class=""></span></button>
+    <button type="submit" class="btn" onclick="location.href='options.html'">Back<span class=""></span></button>
+  </div>
+</div>
+
+</fieldset>
+
+<div class="col-sm-12" align="right">
+  <p>© 2017 Global NL</p>
+</div>
+
+</div>
+<!-- /.container -->
+
+<!-- Load Javascript Files -->
+<script type="text/javascript" src="assets/datatables.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+<script src="firebase.js"></script>
+<script src="auth.js"></script>
+<script src="database.js"></script>
+
+<script>
+
+// Load database
+$(document).ready( function () {
+
+  var loginObject = JSON.parse(localStorage.getItem('loginObject'));
+  if(loginObject != null) {
+    document.getElementById('login_name').innerHTML = '<a href="#"><span class="glyphicon glyphicon-user"></span> ' + loginObject.displayName + '</a>';
+  }
+
+  rootRef.once('value', function(snapshot) {
+    loadDatabase(snapshot);
+  }, function(error) {
+    console.log(error);
+  });
+
+
+});
+
+// Add Location to Database
+function addLocation() {
+
+  // Add Location to Database Variables
+  var company = document.getElementById("company").value;
+  var city = document.getElementById("city").value;
+  var state = document.getElementById("state").value;
+  var country = document.getElementById("country").value;
+  var lat = parseFloat(document.getElementById("lat").value);
+  var lng = parseFloat(document.getElementById("lng").value);
+
+  if(company == "") {
+    alert("Please Input a Company!");
+    return false;
+  }
+
+  if(country == "") {
+    alert("Please Input a Country!");
+    return false;
+  }
+
+  if(city == "") {
+    alert("Please Input a City!");
+    return false;
+  }
+
+  if(lat == "") {
+    alert("Please Input a Latitude!");
+    return false;
+  }
+
+  if(lng == "") {
+    alert("Please Input a Longitude!");
+    return false;
+  }
+
+  // Get last loc_id which is largest number
+  var temp = Object.keys(loc_obj);
+  var last = temp[temp.length-1];
+  var array = last.split("_");
+  var num = parseInt(array[1]);
+  var loc_num = num + 1;
+
+  if(isNewLocation(company, country, state, city)) {
+    rootRef.child('locations/loc_' + loc_num).set({
+      company: company,
+      city: city,
+      state: state,
+      country: country,
+      lat: lat,
+      lng: lng
+    }, function(error) {
+
+      if(error == null) {
+        loc_size = loc_size + 1;
+        alert('Location Added Successfully.');
+      } else {
+        alert(error);
+      }
+
+      window.location.href = "options.html";
+    });
+  }
+  else {
+    alert('Location Already Exists!');
+  }
+
+}
+
+</script>
+
+</body>
+</html>

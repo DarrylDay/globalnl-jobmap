@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Global NL Database - Console</title>
+
+<link rel="stylesheet" type="text/css" href="assets/datatables.min.css"/>
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="options.html">Global NL Database</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li class="active"><a href="options.html">Console</a></li>
+      <li><a href="addlocation.html">Add New Location</a></li>
+      <li><a href="addstudent.html">Add New Student</a></li>
+      <li><a href="addjob.html">Add New Job</a></li>
+      <li><a href="jobmap.html">View Job Map</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li id="login_name"><a href="#"><span class="glyphicon glyphicon-user"></span> User</a></li>
+      <li><a onclick="logout()" href="javascript:void(0);"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container well form-horizontal">
+<fieldset>
+
+<!-- Name -->
+<legend>Database Console</legend>
+
+<!-- Location Buttons -->
+<div class="form-group">
+  <div class="col-md-4 col-md-offset-4">
+    <form action="addlocation.html">
+      <input type="submit" class="btn btn-success btn-block" value="Add New Location to Database"></input>
+    </form>
+  </div>
+</div>
+
+<!-- Student Buttons -->
+<div class="form-group">
+  <div class="col-md-4 col-md-offset-4">
+    <form action="addstudent.html">
+      <input type="submit" class="btn btn-success btn-block" value="Add New Student to Database"></input>
+    </form>
+  </div>
+</div>
+
+<!-- Job Buttons -->
+<div class="form-group">
+  <div class="col-md-4 col-md-offset-4">
+    <form action="addjob.html">
+      <input type="submit" class="btn btn-success btn-block" value="Add New Job to Database"></input>
+    </form>
+  </div>
+</div>
+
+<!-- Export Database Button -->
+<div class="form-group">
+  <div class="col-md-4 col-md-offset-4">
+    <form onclick="exportDatabase();return false;">
+      <input type="submit" class="btn btn-warning btn-block" value="Export Database"></input>
+    </form>
+  </div>
+</div>
+
+<!-- Job Map Button -->
+<div class="form-group">
+  <div class="col-md-4 col-md-offset-4">
+    <form action="jobmap.html">
+      <input type="submit" class="btn btn-primary btn-block" value="View Job Map"></input>
+    </form>
+  </div>
+</div>
+
+</fieldset>
+
+<br></br>
+
+<!-- Name -->
+<legend>Location Database</legend>
+
+<table id="table_loc" class="table table-hover table-striped">
+    <thead>
+        <tr>
+            <th>Company</th>
+            <th>Country</th>
+            <th>State/Province</th>
+            <th>City</th>
+            <th>Latitude (N)</th>
+            <th>Longitude (E)</th>
+            <th>Location ID</th>
+        </tr>
+    </thead>
+</table>
+
+<br></br>
+
+<!-- Name -->
+<legend>Student Database</legend>
+
+<table id="table_st" class="table table-hover table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>School</th>
+            <th>Degree</th>
+            <th>Graduation Year</th>
+            <th>Student ID</th>
+        </tr>
+    </thead>
+</table>
+
+<br></br>
+
+<!-- Name -->
+<legend>Job Database</legend>
+
+<table id="table_job" class="table table-hover table-striped">
+    <thead>
+        <tr>
+            <th>Company</th>
+            <th>Student</th>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Location ID</th>
+            <th>Student ID</th>
+            <th>Job ID</th>
+        </tr>
+    </thead>
+</table>
+
+<br></br>
+
+<div class="col-sm-12" align="right">
+  <p>© 2017 Global NL</p>
+</div>
+
+</div>
+
+<!-- Load Javascript Files -->
+<script type="text/javascript" src="assets/datatables.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+<script src="firebase.js"></script>
+<script src="auth.js"></script>
+<script src="database.js"></script>
+
+<!-- Javascript Code -->
+<script>
+
+$(document).ready( function () {
+
+  var loginObject = JSON.parse(localStorage.getItem('loginObject'));
+  if(loginObject != null) {
+    document.getElementById('login_name').innerHTML = '<a href="#"><span class="glyphicon glyphicon-user"></span> ' + loginObject.displayName + '</a>';
+  }
+
+  rootRef.once('value', function(snapshot) {
+    console.log("Data Retrieved");
+    loadDatabase(snapshot);
+
+    var location_table = $('#table_loc').DataTable( {
+        data: location_table_data,
+        responsive: true,
+        select: {
+                  style: 'single'
+                },
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-3'l><'col-sm-3'i><'col-sm-6'p>>",
+        buttons: ['copy', {
+                      extend: 'excel',
+                      title: 'Global NL Location Database',
+                      filename: 'GlobalNL_Location_Database',
+                      text: 'Excel',
+                  },
+                  {
+                    text: 'Delete',
+                    action: function () {
+                        if(location_table.rows( { selected: true } ).count() != 0) {
+                          var cols = location_table.rows( { selected: true } ).data().toArray();
+                          var id = cols[0][6];
+                          if (confirm('Are you sure you want to delete ' + id + " and all its related jobs from the database?")) {
+                            deleteLocation(id);
+                          }
+                        }
+                    }
+                  }
+                ]
+    });
+    var student_table = $('#table_st').DataTable( {
+        data: student_table_data,
+        responsive: true,
+        select: {
+                  style: 'single'
+                },
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-3'l><'col-sm-3'i><'col-sm-6'p>>",
+        buttons: ['copy', {
+                      extend: 'excel',
+                      title: 'Global NL Student Database',
+                      filename: 'GlobalNL_Student_Database',
+                      text: 'Excel',
+                  },
+                  {
+                    text: 'Delete',
+                    action: function () {
+                        if (student_table.rows( { selected: true } ).count() != 0) {
+                          var cols = student_table.rows( { selected: true } ).data().toArray();
+                          var id = cols[0][4];
+                          if (confirm('Are you sure you want to delete ' + id + " and all its related jobs from the database?")) {
+                            deleteStudent(id);
+                          }
+                        }
+                    }
+                  }
+                ]
+    });
+    var job_table = $('#table_job').DataTable( {
+        data: job_table_data,
+        responsive: true,
+        select: {
+                  style: 'single'
+                },
+        dom: "<'row'<'col-sm-6'B><'col-sm-6'f>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-3'l><'col-sm-3'i><'col-sm-6'p>>",
+        buttons: ['copy', {
+                      extend: 'excel',
+                      title: 'Global NL Job Database',
+                      filename: 'GlobalNL_Job_Database',
+                      text: 'Excel',
+                  },
+                  {
+                    text: 'Delete',
+                    action: function () {
+                        if (job_table.rows( { selected: true } ).count() != 0) {
+                          var cols = job_table.rows( { selected: true } ).data().toArray();
+                          var id = cols[0][6];
+                          if (confirm('Are you sure you want to delete ' + id + " from the database?")) {
+                            deleteJob(id);
+                          }
+                        }
+                    }
+                  }
+                ]
+    });
+  }, function(error) {
+    console.log(error);
+  });
+
+});
+
+// Delete Location
+function deleteLocation(loc_id) {
+
+  for (var i = 0; i < jobs.length; i++) {
+    if(jobs[i].loc_id == loc_id) {
+      rootRef.child('jobs/' + jobs[i].job_id).remove(function(error){
+        if(error != null) {
+          alert(error);
+          window.location.href = "options.html";
+        }
+      });
+    }
+  }
+
+  rootRef.child('locations/' + loc_id).remove(function(error){
+    if(error == null) {
+      alert('Location Deleted Successfully.');
+    } else {
+      alert(error);
+    }
+    window.location.href = "options.html";
+  });
+
+}
+
+// Delete Student
+function deleteStudent(st_id) {
+
+  for (var i = 0; i < jobs.length; i++) {
+    if(jobs[i].st_id == st_id) {
+      rootRef.child('jobs/' + jobs[i].job_id).remove(function(error){
+        if(error != null) {
+          alert(error);
+          window.location.href = "options.html";
+        }
+      });
+    }
+  }
+
+  rootRef.child('students/' + st_id).remove(function(error){
+    if(error == null) {
+      alert('Student Deleted Successfully.');
+    } else {
+      alert(error);
+    }
+    window.location.href = "options.html";
+  });
+
+}
+
+// Delete Job
+function deleteJob(job_id) {
+  rootRef.child('jobs/' + job_id).remove(function(error){
+    if(error == null) {
+      alert('Job Deleted Successfully.');
+    } else {
+      alert(error);
+    }
+
+    window.location.href = "options.html";
+  });
+}
+
+</script>
+
+<!-- Ending Tags -->
+</body>
+</html>

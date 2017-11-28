@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <meta charset="UTF-8">
+    <title>Global NL Job Map</title>
+    <style>
+       #map {
+        height: 400px;
+        width: 100%;
+       }
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="assets/datatables.min.css"/>
+
+  </head>
+
+<body>
+
+<div id="map"></div>
+
+<div class="col-sm-12" align="right">
+  <p>© 2017 Global NL</p>
+</div>
+
+<!-- Load Firebase Database Javascript -->
+<script type="text/javascript" src="assets/datatables.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+<script src="firebase.js"></script>
+<script src="database.js"></script>
+
+<script>
+
+var infowindow;
+
+// Init Google Maps
+function initMap() {
+
+  infowindow = new google.maps.InfoWindow();
+
+  // Create Map and Center on North America
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: gmap_default_zoom,
+    center: {lat: gmap_default_lat, lng: gmap_default_lng}
+  });
+
+  google.maps.event.addListener(map, 'click', function() {
+    infowindow.close();
+  });
+
+}
+
+// Load database
+$(document).ready( function () {
+
+  rootRef.once('value', function(snapshot) {
+
+    loadDatabase(snapshot);
+
+    map.setZoom(gmap_default_zoom);
+    var pt = new google.maps.LatLng(gmap_default_lat, gmap_default_lng);
+    map.setCenter(pt);
+
+    // Create Markers
+    for (var i = 0; i < locations.length; i++) {
+      var marker = new Marker(locations[i]);
+
+      var pt = new google.maps.LatLng(locations[i].lat, locations[i].lng);
+
+      /* Image test
+      // Set content
+      var string = '<div class="row"><div class="col-xs-6"><h3>' + locations[i].company + '</h3>' +
+                   '<h4>Country:  ' + locations[i].country + '</h4>' +
+                   '<h4>State/Province: ' + locations[i].state + '</h4>' +
+                   '<h4>City: ' + locations[i].city + '</h4>' +
+                   '</div><div class="col-xs-6"><img BORDER="0" ALIGN="Center" src="./logos/apple.png"></div></div>' +
+                   '<div class="col-xs-12"><h5>Students:</h5>' + '<ul>';
+      */
+
+      var string = '<h2>' + locations[i].company + '</h2>' +
+                   '<h4>' + locations[i].city;
+
+      if(locations[i].state != "") {
+        string = string + ', ' + locations[i].state;
+      }
+
+      string = string + ', ' + locations[i].country + '</h4>' +
+                   '<table class="table-responsive table" style="width:100%"><tr>' +
+                   '<th>Student</th>' +
+                   '<th>Title</th>' +
+                   '<th>Date</th></tr>';
+
+      for (var j = 0; j < jobs.length; j++) {
+        if (jobs[j].loc_id == locations[i].loc_id) {
+          marker.addJob(jobs[j]);
+          string = string + '<tr><td>' + st_obj[jobs[j].st_id].name + '</td>' +
+                  '<td>' + jobs[j].title + '</td>' +
+                  '<td>' + jobs[j].date + '</td></tr>';
+        }
+      }
+      string = string + '</table>';
+
+      createMarker(pt, string);
+      markers.push(marker);
+    }
+
+  });
+
+});
+
+function createMarker(latlng, html) {
+
+  var marker = new google.maps.Marker({
+    position: latlng,
+    map: map
+  });
+
+  google.maps.event.addListener(marker, 'click', function() {
+
+    infowindow.setContent(html);
+    infowindow.open(map, marker);
+  });
+}
+
+</script>
+
+<script async defer
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCXZBepVUe889mMyQdhhbD1MdecUmDNDwM&callback=initMap">
+</script>
+
+</body>
+</html>
