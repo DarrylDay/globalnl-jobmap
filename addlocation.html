@@ -175,12 +175,16 @@ function addLocation() {
     return false;
   }
 
-  // Get last loc_id which is largest number
-  var temp = Object.keys(loc_obj);
-  var last = temp[temp.length-1];
-  var array = last.split("_");
-  var num = parseInt(array[1]);
-  var loc_num = num + 1;
+  // Get unused st_id
+  var all_loc_ids = Object.keys(loc_obj);
+  var loc_num = 1;
+
+  while(1) {
+    if(all_loc_ids.indexOf("loc_" + loc_num) == -1) {
+      break;
+    }
+    loc_num = loc_num + 1;
+  }
 
   if(isNewLocation(company, country, state, city)) {
     rootRef.child('locations/loc_' + loc_num).set({
